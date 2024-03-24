@@ -1,0 +1,16 @@
+version: '2.0.0'
+
+services:
+  polaris:
+    container_name: alpha
+    image: daralf23/polaris:base
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    command: python polaris/bot.py
+    user: root
+    volumes:
+      - Logs:/app/logs
+volumes:
+  Logs:
+    driver: local

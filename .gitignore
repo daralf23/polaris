@@ -58,6 +58,10 @@ cover/
 # Django stuff:
 *.log
 local_settings.py
+<<<<<<< HEAD
+=======
+*.db
+>>>>>>> a5e89d3 (Init)
 db.sqlite3
 db.sqlite3-journal
 
