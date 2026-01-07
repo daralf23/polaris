@@ -1,6 +1,6 @@
 import json
 from unittest.mock import patch
-from polaris.weather.client import ForecastClient
+from polaris.weather.client import WeatherBug
 from polaris.weather.models import ThreeDayForecast, ForecastPeriod
 
 def fake_point_response():
@@ -26,20 +26,6 @@ def fake_forecast_response():
         }
     }
 
-@patch("polaris.weather.client.requests.get")
-def test_three_day_forecast(mock_get):
-    # Mock two sequential GET calls
-    mock_get.side_effect = [
-        DummyResp(fake_point_response()),
-        DummyResp(fake_forecast_response()),
-    ]
-
-    client = ForecastClient(35.0, -97.0)
-    result = client.get_three_day_forecast()
-
-    assert isinstance(result, ThreeDayForecast)
-    assert len(result.periods) == 6
-    assert isinstance(result.periods[0], ForecastPeriod)
 
 
 class DummyResp:

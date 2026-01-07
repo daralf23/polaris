@@ -1,13 +1,23 @@
 from dataclasses import dataclass
-from typing import List
+
+
+BASE_URL = "https://api.weather.gov"
+
+@dataclass
+class ZoneInfo:
+    id: str
+    name: str
+    type: str
+    state: str
+
 
 @dataclass
 class ForecastPeriod:
     name: str
+    start_time: str
+    end_time: str
     temperature: int
     temperature_unit: str
-    short_forecast: str
-
-@dataclass
-class ThreeDayForecast:
-    periods: List[ForecastPeriod]
+    wind_speed: str
+    wind_direction: str
+    detailed_forecast: str
