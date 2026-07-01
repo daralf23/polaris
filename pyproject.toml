@@ -1,3 +1,8 @@
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "polaris"
 version = "0.1.0"
@@ -21,3 +26,10 @@ dev = [
     "respx>=0.23.1",
     "ruff>=0.15.20",
 ]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

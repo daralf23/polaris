@@ -1,20 +1,24 @@
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
+from typing import Generic, TypeVar
+from pydantic import BaseModel
 
 from polaris.models.context import PluginContext
 from polaris.models.event import Event
 
+ConfigT = TypeVar("ConfigT", bound=BaseModel)
 
-class BasePlugin(ABC):
 
-  name: str
+class BasePlugin(Generic[ConfigT], ABC):
 
-  version: str = "0.1"
+    name: str
+    version: str = "0.1"
 
-  @abstractmethod
-  async def run(
-      self,
-      context: PluginContext,
-      **kwargs
-  ) -> Event | None:
-    """Execute the plugin."""
+    config_model: type[ConfigT] | None = None
+
+    @abstractmethod
+    async def run(
+        self,
+        context: PluginContext,
+        config: ConfigT,
+    ) -> Event | None:
+        pass

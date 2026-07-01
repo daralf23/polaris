@@ -1,26 +1,26 @@
-from polaris.models.event import Event
-from polaris.models.event import EventLevel
-from polaris.models.context import PluginContext
+from pydantic import BaseModel
 
+from polaris.models.event import Event, EventLevel
+from polaris.models.context import PluginContext
 from polaris.plugins.base import BasePlugin
 
 
-class HelloPlugin(BasePlugin):
+class HelloConfig(BaseModel):
+    message: str = "Polaris is working!"
 
-  name = "hello"
 
-  async def run(
-      self,
-      context: PluginContext,
-      **kwargs
-  ):
+class HelloPlugin(BasePlugin[HelloConfig]):
 
-    context.logger.info(
-        "hello_plugin_running"
-    )
+    name = "hello"
+    version = "0.1"
 
-    return Event(
-        level=EventLevel.INFO,
-        title="Hello",
-        message="Polaris plugin system is working!"
-    )
+    config_model = HelloConfig
+
+    async def run(self, context: PluginContext, config: HelloConfig):
+
+        context.logger.info("hello_plugin_running")
+
+        return Event(
+            title="PIPELINE_TEST",
+            message="Polaris full pipeline is working",
+        )

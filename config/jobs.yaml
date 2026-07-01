@@ -1,0 +1,9 @@
+jobs:
+
+  - name: hello_job
+    plugin: hello
+    schedule: "*/1 * * * *"
+    enabled: true
+
+    config:
+      message: "Polaris is alive"
