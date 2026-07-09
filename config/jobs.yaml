@@ -7,3 +7,15 @@ jobs:
 
     config:
       message: "Polaris is alive"
+
+  - name: weather_home
+    plugin: weather_forecast
+    schedule: "0 6 * * *"
+
+    config:
+      latitude: 35.4
+      longitude: -97.5
+
+      periods: 6
+
+      label: Home     

@@ -21,6 +21,6 @@ class HelloPlugin(BasePlugin[HelloConfig]):
         context.logger.info("hello_plugin_running")
 
         return Event(
-            title="PIPELINE_TEST",
-            message="Polaris full pipeline is working",
+            title="Hello World",
+            message="Polaris says Hello",
         )

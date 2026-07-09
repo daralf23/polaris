@@ -1,24 +1,35 @@
-import asyncio
-import structlog
-
+from polaris.bot.client import PolarisBot
+from polaris.bot.dispatcher import DiscordDispatcher
 from polaris.scheduler.engine import SchedulerEngine
-from polaris.config.loader import ConfigLoader
+from polaris.services.config_loader import ConfigLoader
+from polaris.services.logger import LoggerService
 
 
-async def main():
-    logger = structlog.get_logger()
+def main():
 
-    config_loader = ConfigLoader()
+    logger = LoggerService()
 
-    engine = SchedulerEngine(config_loader, logger)
+    config_loader = ConfigLoader(
+        "config/jobs.yaml"
+    )
 
-    engine.start()
+    scheduler = SchedulerEngine(
+        config_loader=config_loader,
+        logger=logger,
+        dispatcher=None,
+    )
 
-    logger.info("polaris_started")
+    bot = PolarisBot(
+        scheduler=scheduler,
+        logger=logger
+    )
 
-    while True:
-        await asyncio.sleep(3600)  # keep event loop alive
+    dispatcher = DiscordDispatcher(bot)
+
+    scheduler.dispatcher = dispatcher
+
+    bot.run(bot.config.token)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

@@ -4,14 +4,36 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from polaris.services.plugin_manager import PluginManager
 from polaris.models.context import PluginContext
 
-from polaris.services.dispatcher import ConsoleDispatcher
+from polaris.services.dispatcher import ConsoleDispatcher, DiscordDispatcher
+from polaris.services.logger import LoggerService
+
+import yaml
+from pathlib import Path
+import time
+from datetime import datetime, timezone
+
+from polaris.models.plugin_log import PluginLog
+
+def load_discord_config():
+    path = Path("config/discord.yaml")
+
+    if not path.exists():
+        return None
+
+    with open(path, "r") as f:
+        return yaml.safe_load(f)
 
 class SchedulerEngine:
-    def __init__(self, config_loader, logger):
+
+    def __init__(
+        self,
+        config_loader,
+        logger,
+        dispatcher
+    ):
         self.config_loader = config_loader
         self.logger = logger
-
-        self.dispatcher = ConsoleDispatcher()
+        self.dispatcher = dispatcher
 
         self.scheduler = AsyncIOScheduler()
         self.plugin_manager = PluginManager()
@@ -56,11 +78,38 @@ class SchedulerEngine:
 
         self.logger.info(f"running_plugin:{plugin.name}")
 
-        event = await plugin.run(context, config)
+        start = time.time()
+        error = None
+        events_count = 0
 
-        if event:
-            event.source = plugin.name
-            await self.dispatcher.send(event)
+        result = None
+
+        try:
+            result = await plugin.run(context, config)
+
+            if result:
+                events_count = 1
+                await self.dispatcher.send(result)
+
+            status = "success"
+
+        except Exception as e:
+            error = str(e)
+            status = "error"
+
+        end = time.time()
+
+        log = PluginLog(
+            ts=datetime.now(timezone.utc).isoformat(),
+            plugin=plugin.name,
+            status=status,
+            events_emitted=events_count,
+            follow_up_seconds=None,
+            duration_ms=int((end - start) * 1000),
+            error=error,
+        )
+
+        self.logger.telemetry(log)
 
     def _parse_cron(self, cron_expr: str):
         # "0 7 * * *"
