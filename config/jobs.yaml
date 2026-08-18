@@ -17,5 +17,6 @@ jobs:
       longitude: -97.5
 
       periods: 6
-
+      normal_poll: "*/15 * * * *"
+      alert_poll: "*/1 * * * *"
       label: Home     

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from polaris.models.event import Event, EventLevel
+from polaris.models.event import Event
 from polaris.models.context import PluginContext
 from polaris.plugins.base import BasePlugin
 
@@ -10,7 +10,6 @@ class HelloConfig(BaseModel):
 
 
 class HelloPlugin(BasePlugin[HelloConfig]):
-
     name = "hello"
     version = "0.1"
 
@@ -22,5 +21,5 @@ class HelloPlugin(BasePlugin[HelloConfig]):
 
         return Event(
             title="Hello World",
-            message="Polaris says Hello",
+            message="Test Hello World",
         )

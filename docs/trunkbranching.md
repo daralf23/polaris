@@ -13,5 +13,5 @@ git push origin main
 
 # Clean Up
 
-git branch -d feature/my-new-task
+git branch -d  /my-new-task
 git push origin --delete feature/my-new-taskg 

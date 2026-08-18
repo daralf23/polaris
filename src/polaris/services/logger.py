@@ -9,7 +9,6 @@ from polaris.models.plugin_log import PluginLog
 
 
 class LoggerService:
-
     def __init__(self):
 
         logging.basicConfig(

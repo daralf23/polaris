@@ -9,12 +9,7 @@ load_dotenv()
 
 
 class PolarisBot(discord.Client):
-
-    def __init__(
-        self,
-        scheduler,
-        logger
-    ):
+    def __init__(self, scheduler, logger):
         intents = discord.Intents.default()
         super().__init__(intents=intents)
         print(os.getenv("DISCORD_TOKEN"))
@@ -35,7 +30,7 @@ class PolarisBot(discord.Client):
             channel = await self.fetch_channel(self.config.channel_id)
 
         return channel
-    
+
     async def on_ready(self):
         if not self._scheduler_started:
             self.scheduler.start()

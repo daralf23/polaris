@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from datetime import datetime
+from datetime import UTC, datetime
+from pydantic import BaseModel, Field
 from enum import Enum
 
 
@@ -13,6 +13,6 @@ class Event(BaseModel):
     title: str
     message: str
     level: EventLevel = EventLevel.INFO
-    timestamp: datetime = datetime.utcnow()
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    source: str | None = None  # plugin name
+    source: str | None = None

@@ -1,11 +1,5 @@
-import asyncio
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-
-from polaris.services.plugin_manager import PluginManager
 from polaris.models.context import PluginContext
-
-from polaris.services.dispatcher import ConsoleDispatcher, DiscordDispatcher
-from polaris.services.logger import LoggerService
+from apscheduler.triggers.cron import CronTrigger
 
 import yaml
 from pathlib import Path
@@ -13,6 +7,7 @@ import time
 from datetime import datetime, timezone
 
 from polaris.models.plugin_log import PluginLog
+
 
 def load_discord_config():
     path = Path("config/discord.yaml")
@@ -23,20 +18,19 @@ def load_discord_config():
     with open(path, "r") as f:
         return yaml.safe_load(f)
 
-class SchedulerEngine:
 
+class SchedulerEngine:
     def __init__(
         self,
         config_loader,
         logger,
-        dispatcher
+        dispatcher,
+        state,
     ):
         self.config_loader = config_loader
         self.logger = logger
         self.dispatcher = dispatcher
-
-        self.scheduler = AsyncIOScheduler()
-        self.plugin_manager = PluginManager()
+        self.state = state
 
     def start(self):
         self.logger.info("scheduler_starting")
@@ -73,7 +67,9 @@ class SchedulerEngine:
             logger=self.logger,
             config=config,
             http=None,
-            dispatcher=None,
+            dispatcher=self.dispatcher,
+            scheduler=self,
+            state=self.state,
         )
 
         self.logger.info(f"running_plugin:{plugin.name}")
@@ -122,3 +118,28 @@ class SchedulerEngine:
             "month": month,
             "day_of_week": dow,
         }
+
+    def reschedule_job(
+        self,
+        plugin_name: str,
+        cron: str,
+    ):
+
+        job = self.scheduler.get_job(plugin_name)
+
+        if job is None:
+            self.logger.warning(
+                "job_not_found",
+                plugin=plugin_name,
+            )
+            return
+
+        trigger = CronTrigger.from_crontab(cron)
+
+        job.reschedule(trigger=trigger)
+
+        self.logger.info(
+            "job_rescheduled",
+            plugin=plugin_name,
+            cron=cron,
+        )

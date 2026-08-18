@@ -1,115 +1,95 @@
-import aiohttp
+from __future__ import annotations
 
 from polaris.models.event import Event
-from polaris.models.plugin_result import PluginResult
 from polaris.models.weather import WeatherConfig
 from polaris.plugins.base import BasePlugin
 from polaris.services.weather_service import WeatherService
 
-import json
-from pathlib import Path
 
 class WeatherAlertPlugin(BasePlugin[WeatherConfig]):
     name = "weather_alert"
     config_model = WeatherConfig
-    STATE_FILE = Path("data/weather_alert_state.json")
 
     def __init__(self):
         self.weather = WeatherService()
-        self._state_loaded = False
-        self.known_alert_ids = set()
-        # in-memory state (we'll persist later)
+        self.current_schedule = None
         self.known_alert_ids: set[str] = set()
+        self._state_initialized = False
 
-    def load_state(self):
-        if not self.STATE_FILE.exists():
-            self.known_alert_ids = set()
-            return
+    async def run(
+        self,
+        context,
+        config: WeatherConfig,
+    ) -> Event | None:
 
-        try:
-            with open(self.STATE_FILE, "r") as f:
-                data = json.load(f)
+        if not self._state_initialized:
+            state = context.state.load(self.name)
 
-            self.known_alert_ids = set(data.get("known_alert_ids", []))
+            self.known_alert_ids = set(
+                state.get(
+                    "known_alert_ids",
+                    [],
+                )
+            )
 
-        except Exception:
-            # fail safe: don't break plugin if file is corrupt
-            self.known_alert_ids = set()
+            self._state_initialized = True
 
-    def save_state(self):
-        self.STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-
-        data = {
-            "known_alert_ids": list(self.known_alert_ids)
-        }
-
-        with open(self.STATE_FILE, "w") as f:
-            json.dump(data, f, indent=2)
-
-    async def run(self, context, config: WeatherConfig):
-
-        if not self._state_loaded:
-            self.load_state()
-            self._state_loaded = True
-
-        data = await self.weather.get_active_alerts(
+        alerts = await self.weather.get_active_alerts(
             config.latitude,
             config.longitude,
         )
 
-        features = data.get("features", [])
-
         current_ids = set()
-        events = []
 
-        # ---------------------------
-        # 1. Parse current alerts
-        # ---------------------------
-        for alert in features:
-            alert_id = alert["id"]
-            current_ids.add(alert_id)
+        new_alerts = []
 
-            if alert_id not in self.known_alert_ids:
-                props = alert["properties"]
+        for alert in alerts:
+            current_ids.add(alert.id)
 
-                events.append(
-                    Event(
-                        title=f"🚨 {props.get('event', 'Weather Alert')}",
-                        message=props.get("headline", "New weather alert"),
-                    )
-                )
+            if alert.id not in self.known_alert_ids:
+                new_alerts.append(alert)
 
-        # ---------------------------
-        # 2. Detect expired alerts
-        # ---------------------------
-        expired = self.known_alert_ids - current_ids
+        cleared_alert_ids = list(self.known_alert_ids - current_ids)
 
-        for alert_id in expired:
-            events.append(
-                Event(
-                    title="Weather Alert Cleared",
-                    message=f"Alert ended: {alert_id}",
-                )
-            )
-
-        # ---------------------------
-        # 3. Update state
-        # ---------------------------
         self.known_alert_ids = current_ids
 
-        # ---------------------------
-        # 4. Decide polling frequency
-        # ---------------------------
-        if current_ids:
-            follow_up = 60      # active weather → check often
-        else:
-            follow_up = 900     # calm weather → slow polling
+        context.state.save(
+            self.name,
+            {"known_alert_ids": list(self.known_alert_ids)},
+        )
 
-        # ---------------------------
-        # 5. Return result
-        # ---------------------------
-        self.save_state()
-        return PluginResult(
-            events=events,
-            follow_up_seconds=follow_up,
+        desired_schedule = config.alert_poll if current_ids else config.normal_poll
+
+        if context.scheduler and desired_schedule != self.current_schedule:
+            context.scheduler.reschedule_job(
+                self.name,
+                desired_schedule,
+            )
+
+            self.current_schedule = desired_schedule
+
+        if not new_alerts and not cleared_alert_ids:
+            return None
+
+        lines: list[str] = []
+
+        if new_alerts:
+            lines.append("🚨 **New Alerts**")
+
+            for alert in new_alerts:
+                lines.append(f"• **{alert.event}**\n  {alert.headline}")
+
+        if cleared_alert_ids:
+            if lines:
+                lines.append("")
+
+            lines.append("✅ **Cleared Alerts**")
+
+            for alert_id in cleared_alert_ids:
+                lines.append(f"• {alert_id}")
+
+        return Event(
+            title="Weather Alert Update",
+            message="\n".join(lines),
+            source=self.name,
         )

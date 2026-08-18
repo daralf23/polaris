@@ -9,7 +9,6 @@ ConfigT = TypeVar("ConfigT", bound=BaseModel)
 
 
 class BasePlugin(Generic[ConfigT], ABC):
-
     name: str
     version: str = "0.1"
 
