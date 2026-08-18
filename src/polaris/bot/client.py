@@ -4,6 +4,7 @@ import discord
 from dotenv import load_dotenv
 
 from polaris.models.bot_config import BotConfig
+from polaris.bot.commands import handle_message
 
 load_dotenv()
 
@@ -36,3 +37,6 @@ class PolarisBot(discord.Client):
             self.scheduler.start()
             self._scheduler_started = True
             self.logger.info("scheduler_started")
+
+    async def on_message(self, message: discord.Message):
+        await handle_message(message)

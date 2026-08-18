@@ -20,3 +20,21 @@ jobs:
       normal_poll: "*/15 * * * *"
       alert_poll: "*/1 * * * *"
       label: Home     
+
+  - name: daily_quote
+    plugin: quote
+    schedule: "0 7 * * *"
+    enabled: true
+    config: {}
+
+  - name: internet_monitor
+    plugin: internet_monitor
+    schedule: "0 * * * *"
+    enabled: true
+
+    config:
+      normal_poll: "0 * * * *"
+      degraded_poll: "*/10 * * * *"
+      offline_poll: "*/1 * * * *"
+      history_size: 10
+      degradation_threshold: 0.80    
