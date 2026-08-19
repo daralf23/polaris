@@ -51,18 +51,23 @@ class SchedulerEngine:
             config = config_model.model_validate(job.get("config", {}))
             cron = self._parse_cron(job["schedule"])
 
-            self.scheduler.add_job(
-                self._run_plugin,
-                trigger="cron",
-                args=[plugin, config],
-                **cron,
-                id=job["name"],
-                replace_existing=True,
-            )
+        self.scheduler.add_job(
+            self._run_plugin,
+            trigger="cron",
+            args=[plugin, config, job["name"]],
+            **cron,
+            id=job["name"],
+            replace_existing=True,
+        )
 
         self.scheduler.start()
 
-    async def _run_plugin(self, plugin, config):
+    async def _run_plugin(
+        self,
+        plugin,
+        config,
+        job_name=None,
+    ):
         context = PluginContext(
             logger=self.logger,
             config=config,
@@ -70,6 +75,7 @@ class SchedulerEngine:
             dispatcher=self.dispatcher,
             scheduler=self,
             state=self.state,
+            job_name=job_name,
         )
 
         self.logger.info(f"running_plugin:{plugin.name}")

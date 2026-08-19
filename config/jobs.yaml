@@ -29,12 +29,12 @@ jobs:
 
   - name: internet_monitor
     plugin: internet_monitor
-    schedule: "0 * * * *"
+    schedule: "*/15 * * * *"
     enabled: true
 
     config:
-      normal_poll: "0 * * * *"
-      degraded_poll: "*/10 * * * *"
-      offline_poll: "*/1 * * * *"
-      history_size: 10
-      degradation_threshold: 0.80    
+      baseline_runs: 10
+      degradation_threshold: 0.20
+      normal_poll: "*/15 * * * *"
+      degraded_poll: "*/5 * * * *"
+      offline_poll: "* * * * *"
