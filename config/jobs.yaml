@@ -3,7 +3,7 @@ jobs:
   - name: hello_job
     plugin: hello
     schedule: "*/1 * * * *"
-    enabled: true
+    enabled: false
 
     config:
       message: "Polaris is alive"

@@ -13,7 +13,6 @@ class PolarisBot(discord.Client):
     def __init__(self, scheduler, logger):
         intents = discord.Intents.default()
         super().__init__(intents=intents)
-        print(os.getenv("DISCORD_TOKEN"))
         self.scheduler = scheduler
         self.logger = logger
 

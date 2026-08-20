@@ -1,12 +1,14 @@
-from polaris.models.context import PluginContext
-from apscheduler.triggers.cron import CronTrigger
-
-import yaml
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from datetime import datetime, timezone
 from pathlib import Path
 import time
-from datetime import datetime, timezone
 
+import yaml
+from apscheduler.triggers.cron import CronTrigger
+
+from polaris.models.context import PluginContext
 from polaris.models.plugin_log import PluginLog
+from polaris.services.plugin_manager import PluginManager
 
 
 def load_discord_config():
@@ -31,6 +33,8 @@ class SchedulerEngine:
         self.logger = logger
         self.dispatcher = dispatcher
         self.state = state
+        self.plugin_manager = PluginManager()
+        self.scheduler = AsyncIOScheduler()
 
     def start(self):
         self.logger.info("scheduler_starting")
@@ -43,22 +47,26 @@ class SchedulerEngine:
                 continue
 
             plugin = plugins.get(job["plugin"])
+
             if not plugin:
                 self.logger.warning(f"plugin_not_found:{job['plugin']}")
                 continue
 
             config_model = plugin.config_model
+
             config = config_model.model_validate(job.get("config", {}))
+
             cron = self._parse_cron(job["schedule"])
 
-        self.scheduler.add_job(
-            self._run_plugin,
-            trigger="cron",
-            args=[plugin, config, job["name"]],
-            **cron,
-            id=job["name"],
-            replace_existing=True,
-        )
+            self.scheduler.add_job(
+                self._run_plugin,
+                trigger="cron",
+                args=[plugin, config, job["name"]],
+                **cron,
+                id=job["name"],
+                name=job["name"],
+                replace_existing=True,
+            )
 
         self.scheduler.start()
 
