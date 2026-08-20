@@ -29,8 +29,6 @@ class InternetMonitorPlugin(BasePlugin[InternetMonitorConfig]):
         result = await self.speed_test.run(config.speed_test)
 
         previous_online = state["previous_online"]
-        download_history = state["download_history"]
-        upload_history = state["upload_history"]
 
         # --------------------------------------------------
         # OFFLINE
@@ -61,7 +59,7 @@ class InternetMonitorPlugin(BasePlugin[InternetMonitorConfig]):
             return None
 
         # --------------------------------------------------
-        # RECOVERY
+        # ONLINE / RECOVERY
         # --------------------------------------------------
 
         state["previous_online"] = True
@@ -88,18 +86,20 @@ class InternetMonitorPlugin(BasePlugin[InternetMonitorConfig]):
         # --------------------------------------------------
 
         if result.download_mbps is not None:
-            download_history.append(result.download_mbps)
+            state["download_history"].append(result.download_mbps)
 
-            state["download_history"] = download_history[-config.baseline_runs :]
+            state["download_history"] = state["download_history"][
+                -config.baseline_runs :
+            ]
 
         # --------------------------------------------------
         # RECORD UPLOAD
         # --------------------------------------------------
 
         if result.upload_mbps is not None:
-            upload_history.append(result.upload_mbps)
+            state["upload_history"].append(result.upload_mbps)
 
-            state["upload_history"] = upload_history[-config.baseline_runs :]
+            state["upload_history"] = state["upload_history"][-config.baseline_runs :]
 
         # --------------------------------------------------
         # NOT ENOUGH DATA FOR BASELINE
@@ -130,11 +130,15 @@ class InternetMonitorPlugin(BasePlugin[InternetMonitorConfig]):
 
         minimum_speed = baseline * config.degradation_threshold
 
+        performance_state = state["performance_state"]
+
         # --------------------------------------------------
         # DEGRADED
         # --------------------------------------------------
 
         if current_speed < minimum_speed:
+            state["performance_state"] = "degraded"
+
             self._save_state(
                 context,
                 state,
@@ -145,20 +149,25 @@ class InternetMonitorPlugin(BasePlugin[InternetMonitorConfig]):
                 config.degraded_poll,
             )
 
-            return Event(
-                title="⚠️ Internet Speed Degraded",
-                message=(
-                    f"Download speed is "
-                    f"{current_speed:.1f} Mbps. "
-                    f"Normal baseline is "
-                    f"{baseline:.1f} Mbps."
-                ),
-                source=self.name,
-            )
+            if performance_state == "normal":
+                return Event(
+                    title="⚠️ Internet Speed Degraded",
+                    message=(
+                        f"Download speed is "
+                        f"{current_speed:.1f} Mbps. "
+                        f"Normal baseline is "
+                        f"{baseline:.1f} Mbps."
+                    ),
+                    source=self.name,
+                )
+
+            return None
 
         # --------------------------------------------------
-        # NORMAL
+        # RECOVERED
         # --------------------------------------------------
+
+        state["performance_state"] = "normal"
 
         self._save_state(
             context,
@@ -170,6 +179,18 @@ class InternetMonitorPlugin(BasePlugin[InternetMonitorConfig]):
             config.normal_poll,
         )
 
+        if performance_state == "degraded":
+            return Event(
+                title="✅ Internet Speed Recovered",
+                message=(
+                    f"Download speed has recovered "
+                    f"to {current_speed:.1f} Mbps. "
+                    f"Normal baseline is "
+                    f"{baseline:.1f} Mbps."
+                ),
+                source=self.name,
+            )
+
         return None
 
     def _load_state(
@@ -177,17 +198,24 @@ class InternetMonitorPlugin(BasePlugin[InternetMonitorConfig]):
         context,
     ) -> dict:
 
+        default_state = {
+            "previous_online": None,
+            "performance_state": "normal",
+            "download_history": [],
+            "upload_history": [],
+        }
+
         if context.state is None:
-            return {
-                "previous_online": None,
-                "download_history": [],
-                "upload_history": [],
-            }
+            return default_state
 
         state = context.state.load(self.STATE_KEY)
 
         return {
             "previous_online": state.get("previous_online"),
+            "performance_state": state.get(
+                "performance_state",
+                "normal",
+            ),
             "download_history": state.get(
                 "download_history",
                 [],

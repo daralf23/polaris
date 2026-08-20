@@ -1,6 +1,5 @@
 from unittest.mock import AsyncMock, MagicMock
 
-import discord
 import pytest
 
 from polaris.bot.commands import handle_message
@@ -10,13 +9,10 @@ def create_message(
     content: str,
     is_bot: bool = False,
 ):
-    message = MagicMock(spec=discord.Message)
+    message = MagicMock()
 
-    message.author = MagicMock()
-    message.author.bot = is_bot
     message.content = content
-
-    message.channel = MagicMock()
+    message.author.bot = is_bot
     message.channel.send = AsyncMock()
 
     return message
@@ -24,8 +20,7 @@ def create_message(
 
 @pytest.mark.asyncio
 async def test_hello_command():
-
-    message = create_message("!Hello")
+    message = create_message("!hello")
 
     await handle_message(message)
 
@@ -34,8 +29,7 @@ async def test_hello_command():
 
 @pytest.mark.asyncio
 async def test_hello_command_is_case_insensitive():
-
-    message = create_message("!HELLO")
+    message = create_message("!HeLLo")
 
     await handle_message(message)
 
@@ -44,9 +38,8 @@ async def test_hello_command_is_case_insensitive():
 
 @pytest.mark.asyncio
 async def test_bot_messages_are_ignored():
-
     message = create_message(
-        "!Hello",
+        "!hello",
         is_bot=True,
     )
 

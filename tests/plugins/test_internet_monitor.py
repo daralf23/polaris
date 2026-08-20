@@ -307,3 +307,83 @@ async def test_offline_does_not_clear_history(
         21.0,
         19.0,
     ]
+
+
+@pytest.mark.asyncio
+async def test_repeated_degradation_returns_none(
+    tmp_path,
+):
+    plugin = InternetMonitorPlugin()
+
+    plugin.speed_test.run = AsyncMock(return_value=create_online_result(download=70.0))
+
+    context = create_context(tmp_path)
+    config = create_config()
+
+    context.state.save(
+        "internet_monitor",
+        {
+            "previous_online": True,
+            "performance_state": "degraded",
+            "download_history": [
+                100.0,
+                100.0,
+                100.0,
+                100.0,
+                100.0,
+                100.0,
+                100.0,
+                100.0,
+                100.0,
+            ],
+            "upload_history": [],
+        },
+    )
+
+    event = await plugin.run(
+        context,
+        config,
+    )
+
+    assert event is None
+
+
+@pytest.mark.asyncio
+async def test_degraded_speed_recovery_generates_event(
+    tmp_path,
+):
+    plugin = InternetMonitorPlugin()
+
+    plugin.speed_test.run = AsyncMock(return_value=create_online_result(download=100.0))
+
+    context = create_context(tmp_path)
+    config = create_config()
+
+    context.state.save(
+        "internet_monitor",
+        {
+            "previous_online": True,
+            "performance_state": "degraded",
+            "download_history": [
+                100.0,
+                100.0,
+                100.0,
+                100.0,
+                100.0,
+                100.0,
+                100.0,
+                100.0,
+                100.0,
+            ],
+            "upload_history": [],
+        },
+    )
+
+    event = await plugin.run(
+        context,
+        config,
+    )
+
+    assert event is not None
+    assert event.title == ("✅ Internet Speed Recovered")
+    assert "100.0 Mbps" in event.message

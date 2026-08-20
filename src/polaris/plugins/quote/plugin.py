@@ -11,32 +11,28 @@ class QuotePlugin(BasePlugin[QuoteConfig]):
     config_model = QuoteConfig
 
     def __init__(self):
-        self.quote_service = QuoteService()
+        self.quote = QuoteService()
 
     async def run(
         self,
         context,
         config: QuoteConfig,
-    ) -> Event:
+    ) -> Event | None:
 
         try:
-            quote = await self.quote_service.get_quote(
-                config.api_url,
-            )
+            quote = await self.quote.get_quote(config.api_url)
 
-        except Exception:
-            context.logger.exception(
-                "quote_failed",
-            )
+        except Exception as ex:
+            context.logger.exception("quote_failed")
 
             return Event(
-                title="💡 Daily Quote",
-                message=("I couldn't retrieve today's quote."),
+                title="Daily Quote Error",
+                message=str(ex),
                 source=self.name,
             )
 
         return Event(
-            title="💡 Daily Quote",
-            message=(f'"{quote.content}"\n— {quote.author}'),
+            title=config.label,
+            message=(f"“{quote.content}”\n— {quote.author}"),
             source=self.name,
         )
