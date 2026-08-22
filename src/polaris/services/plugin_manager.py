@@ -14,7 +14,6 @@ class PluginManager:
         plugin_root = base_path / "polaris" / "plugins"
 
         for file in plugin_root.rglob("plugin.py"):
-
             # Convert file path → module path
             relative = file.relative_to(base_path)
 

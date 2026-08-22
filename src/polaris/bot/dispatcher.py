@@ -4,7 +4,6 @@ from polaris.models.event import Event
 
 
 class DiscordDispatcher:
-
     def __init__(self, bot):
         self.bot = bot
 

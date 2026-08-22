@@ -1,5 +1,4 @@
 from polaris.models.event import Event
-from polaris.models.plugin_result import PluginResult
 from polaris.models.weather import WeatherConfig
 from polaris.plugins.base import BasePlugin
 from polaris.services.weather_service import WeatherService
@@ -25,24 +24,27 @@ class WeatherForecastPlugin(BasePlugin[WeatherConfig]):
             return Event(
                 title="Weather Error",
                 message=str(ex),
+                source=self.name,
             )
 
-        periods = forecast["properties"]["periods"][:config.periods]
+        periods = forecast.periods[: config.periods]
 
         lines = []
 
         for period in periods:
             lines.append(
-                f"{period['name']}: "
-                f"{period['shortForecast']} "
-                f"{period['temperature']}°{period['temperatureUnit']}"
+                (
+                    f"**{period.name}**\n"
+                    f"{period.short_forecast}\n"
+                    f"{period.temperature}°{period.temperature_unit}\n"
+                    f"💨 {period.wind_direction} {period.wind_speed}"
+                )
             )
 
-        return PluginResult(
-            events=[
-                Event(
-                    title="Forecast",
-                    message=message,
-                )
-            ]
+        message = "\n\n".join(lines)
+
+        return Event(
+            title=f"{config.label} Forecast",
+            message=message,
+            source=self.name,
         )

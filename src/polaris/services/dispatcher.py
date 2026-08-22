@@ -8,10 +8,10 @@ class BaseDispatcher(ABC):
     async def send(self, event: Event):
         pass
 
+
 class ConsoleDispatcher(BaseDispatcher):
     async def send(self, event: Event):
         print(f"[{event.level}] {event.title}: {event.message}")
-
 
 
 class DiscordDispatcher(BaseDispatcher):
