@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
+
 from polaris.models.event import Event
-import discord
 
 
 class BaseDispatcher(ABC):
@@ -15,23 +15,13 @@ class ConsoleDispatcher(BaseDispatcher):
 
 
 class DiscordDispatcher(BaseDispatcher):
-    def __init__(self, token: str, channel_id: int):
-        self.token = token
-        self.channel_id = channel_id
-
-        self.client = discord.Client(intents=discord.Intents.default())
-        self.channel = None
-
-        @self.client.event
-        async def on_ready():
-            self.channel = self.client.get_channel(channel_id)
-            print("Discord connected")
+    def __init__(self, client):
+        self.client = client
 
     async def send(self, event: Event):
-        if not self.channel:
+        channel = await self.client.get_notification_channel()
+
+        if channel is None:
             return
 
-        await self.channel.send(f"**{event.title}**\n{event.message}")
-
-    def run(self):
-        self.client.run(self.token)
+        await channel.send(f"**{event.title}**\n{event.message}")

@@ -3,7 +3,7 @@ jobs:
   - name: hello_job
     plugin: hello
     schedule: "*/1 * * * *"
-    enabled: true
+    enabled: false
 
     config:
       message: "Polaris is alive"
@@ -20,3 +20,21 @@ jobs:
       normal_poll: "*/15 * * * *"
       alert_poll: "*/1 * * * *"
       label: Home     
+
+  - name: daily_quote
+    plugin: quote
+    schedule: "0 7 * * *"
+    enabled: true
+    config: {}
+
+  - name: internet_monitor
+    plugin: internet_monitor
+    schedule: "*/15 * * * *"
+    enabled: true
+
+    config:
+      baseline_runs: 10
+      degradation_threshold: 0.20
+      normal_poll: "*/15 * * * *"
+      degraded_poll: "*/5 * * * *"
+      offline_poll: "* * * * *"
