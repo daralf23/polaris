@@ -13,6 +13,8 @@ class PolarisBot(discord.Client):
     def __init__(self, scheduler, logger):
         intents = discord.Intents.default()
         intents.message_content = True
+
+        super().__init__(intents=intents)
         self.scheduler = scheduler
         self.logger = logger
 
