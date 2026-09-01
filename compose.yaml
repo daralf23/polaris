@@ -1,0 +1,11 @@
+services:
+  polaris:
+    build:
+      context: .
+    container_name: polaris
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./config:/app/config
+      - ./data:/app/data
