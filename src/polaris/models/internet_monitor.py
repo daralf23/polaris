@@ -1,6 +1,6 @@
-from __future__ import annotations
+from pydantic import BaseModel, Field
 
-from pydantic import BaseModel
+from polaris.models.speed_test_config import SpeedTestConfig
 
 
 class InternetMonitorConfig(BaseModel):
@@ -11,4 +11,6 @@ class InternetMonitorConfig(BaseModel):
     baseline_runs: int = 10
     degradation_threshold: float = 0.20
 
-    speed_test: object | None = None
+    speed_test: SpeedTestConfig = Field(
+        default_factory=SpeedTestConfig,
+    )
