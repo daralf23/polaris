@@ -12,7 +12,7 @@ load_dotenv()
 class PolarisBot(discord.Client):
     def __init__(self, scheduler, logger):
         intents = discord.Intents.default()
-        super().__init__(intents=intents)
+        intents.message_content = True
         self.scheduler = scheduler
         self.logger = logger
 
